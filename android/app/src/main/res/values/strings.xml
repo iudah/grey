@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">Grey Greg</string>
+  <string name="library_load_error">Native library failed to load: %1$s</string>
+</resources>
