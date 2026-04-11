@@ -1,8 +1,8 @@
+.cache
 .cxx
 .gradle
 .kotlin
 build
 external/raylib/projects/ 
 external/raylib/examples/ 
-external/raylib/.gitignore
-
+external/raylib/.github

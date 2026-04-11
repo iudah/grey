@@ -1,0 +1,52 @@
+#include "arena.h"
+#include "grey_memory.h"
+
+#define ALIGNMENT (sizeof(mem))
+#define ALIGN(x) (((x) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
+
+struct arena {
+  char *buffer;
+  u64 size;
+  u64 top;
+};
+
+Arena arena_create(u64 size) {
+  Arena arena = gmalloc(sizeof(*arena));
+
+  size = ALIGN(size);
+
+  arena->size = size;
+  arena->buffer = gmalloc(size);
+  arena->top = 0;
+
+  return arena;
+}
+
+void arena_destroy(Arena arena) {
+  if (!arena)
+    return;
+  gfree(arena->buffer);
+  gfree(arena);
+}
+
+mem arena_allocate(Arena arena, u64 size) {
+  if (!arena)
+    return NULL;
+
+  size = ALIGN(size);
+  u64 next_top = arena->top + size;
+
+  if (next_top > arena->size)
+    return NULL;
+
+  u64 top = arena->top;
+  arena->top = next_top;
+
+  return (mem)(arena->buffer + top);
+}
+
+void arena_reset(Arena arena) {
+  if (!arena)
+    return;
+  arena->top = 0;
+}
