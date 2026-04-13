@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(raylib)
 
 # Avoid excessive expansion of variables in conditionals. In particular, if
@@ -38,7 +38,7 @@ include(CMakeOptions.txt)
 
 if (UNIX AND NOT APPLE)
   if (NOT GLFW_BUILD_WAYLAND AND NOT GLFW_BUILD_X11)
-    MESSAGE(FATAL_ERROR "Cannot disable both Wayland and X11")
+    message(FATAL_ERROR "Cannot disable both Wayland and X11")
   endif()
 endif()
 
@@ -57,7 +57,7 @@ if(NOT TARGET uninstall)
 endif()
 
 if (${BUILD_EXAMPLES})
-  MESSAGE(STATUS "Building examples is enabled")
+  message(STATUS "Building examples is enabled")
   add_subdirectory(examples)
 endif()
 
