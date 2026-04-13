@@ -4,6 +4,8 @@ project(GreyWorkspace C)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
+set(CMAKE_C_STANDARD 23)
+
 if(CMAKE_ANDROID_NDK)
   message(STATUS "Configuring Raylib for Android")
   set(PLATFORM "Android" CACHE STRING "Raylib Platform" FORCE)

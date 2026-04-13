@@ -24,4 +24,7 @@ bool grey_input_is_down(GreyAction action);
 bool grey_input_is_pressed(GreyAction action);
 bool grey_input_is_released(GreyAction action);
 
+
+void grey_input_draw_gamepad() ;
+
 #endif

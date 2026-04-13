@@ -139,3 +139,18 @@ bool grey_input_is_down(GreyAction action) { return key_down(action); }
 bool grey_input_is_pressed(GreyAction action) { return key_pressed(action); }
 
 bool grey_input_is_released(GreyAction action) { return key_released(action); }
+
+void grey_input_draw_gamepad() {
+#ifdef GREY_USE_TOUCH
+  Color pad_color = Fade(LIGHTGRAY, 0.5f);
+  Color border_color = Fade(DARKGRAY, 0.8f);
+
+  for (GreyAction k = 0; k < ACTION_MAX; ++k) {
+    if (button_area[k].width > 0 && button_area[k].height > 0) {
+      DrawRectangleRec(button_area[k], pad_color);
+      DrawRectangleLinesEx(button_area[k], 2.0f, border_color);
+    }
+  }
+#endif
+}
+
