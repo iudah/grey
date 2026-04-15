@@ -75,6 +75,13 @@ void ecs_add_render(EcsRegistry reg, Entity e, f32 w, f32 h, Color color) {
   reg->render[e - 1] = (RenderComponent){w, h, color};
 }
 
+void ecs_add_player(EcsRegistry reg, Entity e) {
+  if (!is_valid_entity(reg, e))
+    return;
+
+  reg->masks[e - 1] |= COMP_PLAYER;
+}
+
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_POSITION))
     return NULL;
@@ -86,3 +93,16 @@ RenderComponent *ecs_get_render(EcsRegistry reg, Entity e) {
     return NULL;
   return &reg->render[e - 1];
 }
+
+u64 ecs_get_mask(EcsRegistry reg, Entity e){
+  if (!is_valid_entity(reg, e))
+  return 0;
+  return reg->masks[e-1];
+}
+
+u32 ecs_get_number_of_entities(EcsRegistry reg){
+  if (!reg)
+  return 0;
+  return reg->number_of_entities;
+}
+
