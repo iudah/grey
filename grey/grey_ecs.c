@@ -7,6 +7,7 @@ struct ecs_registry {
   RenderComponent *render;
   PositionComponent *positions;
   SpriteComponent *sprites;
+  VelocityComponent *velocities;
   u64 *masks;
   u32 number_of_entities;
 };
@@ -38,6 +39,9 @@ EcsRegistry ecs_create(Arena arena) {
       arena_allocate(arena, MAX_ENTITIES * sizeof(PositionComponent));
   reg->render = arena_allocate(arena, MAX_ENTITIES * sizeof(RenderComponent));
   reg->sprites = arena_allocate(arena, MAX_ENTITIES * sizeof(SpriteComponent));
+  reg->velocities =
+      arena_allocate(arena, MAX_ENTITIES * sizeof(VelocityComponent));
+
   reg->masks = arena_allocate(arena, MAX_ENTITIES * sizeof(u64));
   reg->number_of_entities = 0;
 
@@ -96,6 +100,14 @@ void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
       .texture = texture, .src = src, .tint = tint, .dest = dest};
 }
 
+void ecs_add_velocity(EcsRegistry reg, Entity e) {
+  if (!is_valid_entity(reg, e))
+    return;
+
+  reg->masks[e - 1] |= COMP_VELOCITY;
+  reg->velocities[e - 1] = (VelocityComponent){0, 0};
+}
+
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_POSITION))
     return NULL;
@@ -112,6 +124,12 @@ SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_SPRITE))
     return NULL;
   return &reg->sprites[e - 1];
+}
+
+VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity e) {
+  if (!has_component(reg, e, COMP_VELOCITY))
+    return NULL;
+  return &reg->velocities[e - 1];
 }
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e) {

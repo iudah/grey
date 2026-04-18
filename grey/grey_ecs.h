@@ -14,7 +14,8 @@ typedef enum {
   COMP_POSITION = 1 << 0,
   COMP_RENDER = 1 << 1,
   COMP_PLAYER = 1 << 2,
-  COMP_SPRITE = 1 << 3
+  COMP_SPRITE = 1 << 3,
+  COMP_VELOCITY = 1 << 4
 } ComponentMask;
 
 typedef struct {
@@ -24,15 +25,16 @@ typedef struct {
   f32 width, height;
   Color color;
 } RenderComponent;
-typedef struct{
+typedef struct {
   f32 width, height;
-}SpriteSize;
-typedef struct{
+} SpriteSize;
+typedef struct {
   Texture2D texture;
   Rectangle src;
   SpriteSize dest;
   Color tint;
 } SpriteComponent;
+typedef PositionComponent VelocityComponent;
 
 typedef struct ecs_registry *EcsRegistry;
 
@@ -43,13 +45,15 @@ void ecs_destroy_entity(EcsRegistry reg, Entity e);
 void ecs_add_position(EcsRegistry reg, Entity e, f32 x, f32 y);
 void ecs_add_render(EcsRegistry reg, Entity e, f32 w, f32 h, Color color);
 void ecs_add_player(EcsRegistry reg, Entity e);
-void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src, SpriteSize dest,Color tint);
+void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
+                    SpriteSize dest, Color tint);
+void ecs_add_velocity(EcsRegistry reg, Entity e);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e);
 RenderComponent *ecs_get_render(EcsRegistry reg, Entity e);
 SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e);
+VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity e);
 
 #endif
-

@@ -70,7 +70,7 @@ char *asset_path(const char *asset) {
 }
 
 int main(void) {
-  InitWindow(800, 450, "Grey Engine: M1");
+  InitWindow(800, 450, "Grey Engine: M3");
   ToggleFullscreen();
   SetTargetFPS(60);
 
@@ -89,12 +89,14 @@ int main(void) {
   ecs_add_player(reg, player);
   ecs_add_sprite(reg, player, player_sprite, (Rectangle){0, 0, 128, 128},
                  (SpriteSize){32, 32}, WHITE);
+  ecs_add_velocity(reg, player);
 
   while (!WindowShouldClose()) {
     grey_input_begin_frame();
     grey_input_update();
 
     grey_sys_player_control(reg);
+    grey_sys_physics_update(reg);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);

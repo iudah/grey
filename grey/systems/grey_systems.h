@@ -5,5 +5,6 @@
 
 void grey_sys_player_control(EcsRegistry reg);
 void grey_sys_render_draw(EcsRegistry reg);
+void grey_sys_physics_update(EcsRegistry reg);
 
 #endif
