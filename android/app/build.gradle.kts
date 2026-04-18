@@ -1,5 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val gameAppId = project.findProperty("APP_ID") as? String ?: "io.github.iudah.greygame"
+val gameLibName = project.findProperty("GAME_NAME") as? String ?: "greygame"
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,12 +10,12 @@ plugins {
 }
 
 android {
-    namespace = "io.github.iudah.greygreg"
+    namespace = gameAppId
     compileSdk = 34
     ndkVersion = "28.2.13676358"
 
     defaultConfig {
-        applicationId = "io.github.iudah.greygreg"
+        applicationId = gameAppId
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -25,13 +28,19 @@ android {
                                 "-DANDROID_TOOLCHAIN=clang",
                                 "-DANDROID_PLATFORM=android-24"
                         )
-                cFlags += listOf("-Wall", "-Wextra", "-Wpendatic")
-                targets += listOf("greg")
+                cFlags += listOf("-Wall", "-Wextra", "-Wpedantic")
+                targets += listOf(gameLibName)
             }
         }
         ndk {
             // abiFilters+=listOf( "x86", "x86_64", "armeabi", "armeabi-v7a", "arm64-v8a")
             abiFilters += listOf("armeabi-v7a")
+        }
+    }
+    
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("../../"+gameLibName+"/assets") 
         }
     }
 

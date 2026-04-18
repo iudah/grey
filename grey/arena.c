@@ -1,4 +1,5 @@
 #include "arena.h"
+#include "grey_assert.h"
 #include "grey_memory.h"
 
 #define ALIGNMENT (sizeof(mem))
@@ -23,15 +24,13 @@ Arena arena_create(u64 size) {
 }
 
 void arena_destroy(Arena arena) {
-  if (!arena)
-    return;
+  GREY_ASSERT(arena, "Attempt to destroy NULL arena.");
   gfree(arena->buffer);
   gfree(arena);
 }
 
 mem arena_allocate(Arena arena, u64 size) {
-  if (!arena)
-    return NULL;
+  GREY_ASSERT(arena, "Attempt to allocate NULL arena.");
 
   size = ALIGN(size);
   u64 next_top = arena->top + size;
@@ -46,7 +45,6 @@ mem arena_allocate(Arena arena, u64 size) {
 }
 
 void arena_reset(Arena arena) {
-  if (!arena)
-    return;
+  GREY_ASSERT(arena, "Attempt to reset NULL arena.");
   arena->top = 0;
 }

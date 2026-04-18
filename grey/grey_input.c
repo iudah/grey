@@ -153,4 +153,3 @@ void grey_input_draw_gamepad() {
   }
 #endif
 }
-

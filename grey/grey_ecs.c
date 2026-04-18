@@ -1,16 +1,20 @@
 #include "grey_ecs.h"
+#include "grey_assert.h"
 #include <stdint.h>
 #include <string.h>
 
 struct ecs_registry {
   RenderComponent *render;
   PositionComponent *positions;
+  SpriteComponent *sprites;
   u64 *masks;
   u32 number_of_entities;
 };
 
 static inline bool is_valid_entity(EcsRegistry reg, Entity e) {
-  return reg && e >= 1 && e <= reg->number_of_entities;
+  GREY_ASSERT(reg, "Null registry passed.");
+  GREY_ASSERT(e >= 1 && e <= reg->number_of_entities, "Invalid entity.");
+  return e >= 1 && e <= reg->number_of_entities;
 }
 
 static inline bool has_component(EcsRegistry reg, Entity e,
@@ -23,8 +27,7 @@ static inline bool has_component(EcsRegistry reg, Entity e,
 }
 
 EcsRegistry ecs_create(Arena arena) {
-  if (!arena)
-    return NULL;
+  GREY_ASSERT(arena, "NULL arena passed.");
 
   EcsRegistry reg = arena_allocate(arena, sizeof(*reg));
 
@@ -34,12 +37,12 @@ EcsRegistry ecs_create(Arena arena) {
   reg->positions =
       arena_allocate(arena, MAX_ENTITIES * sizeof(PositionComponent));
   reg->render = arena_allocate(arena, MAX_ENTITIES * sizeof(RenderComponent));
+  reg->sprites = arena_allocate(arena, MAX_ENTITIES * sizeof(SpriteComponent));
   reg->masks = arena_allocate(arena, MAX_ENTITIES * sizeof(u64));
   reg->number_of_entities = 0;
 
-  if (!reg->positions || !reg->render || !reg->masks) {
-    return NULL;
-  }
+  GREY_ASSERT(reg->positions && reg->render && reg->masks && reg->sprites,
+              "Arena has insufficient memory");
 
   memset(reg->masks, 0, MAX_ENTITIES * sizeof(u64));
 
@@ -47,7 +50,8 @@ EcsRegistry ecs_create(Arena arena) {
 }
 
 Entity ecs_create_entity(EcsRegistry reg) {
-  if (!reg || reg->number_of_entities >= MAX_ENTITIES)
+  GREY_ASSERT(reg, "Null registry.");
+  if (reg->number_of_entities >= MAX_ENTITIES)
     return 0;
   return ++reg->number_of_entities;
 }
@@ -82,6 +86,16 @@ void ecs_add_player(EcsRegistry reg, Entity e) {
   reg->masks[e - 1] |= COMP_PLAYER;
 }
 
+void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
+                    SpriteSize dest, Color tint) {
+  if (!is_valid_entity(reg, e))
+    return;
+
+  reg->masks[e - 1] |= COMP_SPRITE;
+  reg->sprites[e - 1] = (SpriteComponent){
+      .texture = texture, .src = src, .tint = tint, .dest = dest};
+}
+
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_POSITION))
     return NULL;
@@ -94,15 +108,19 @@ RenderComponent *ecs_get_render(EcsRegistry reg, Entity e) {
   return &reg->render[e - 1];
 }
 
-u64 ecs_get_mask(EcsRegistry reg, Entity e){
-  if (!is_valid_entity(reg, e))
-  return 0;
-  return reg->masks[e-1];
+SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e) {
+  if (!has_component(reg, e, COMP_SPRITE))
+    return NULL;
+  return &reg->sprites[e - 1];
 }
 
-u32 ecs_get_number_of_entities(EcsRegistry reg){
-  if (!reg)
-  return 0;
+u64 ecs_get_mask(EcsRegistry reg, Entity e) {
+  if (!is_valid_entity(reg, e))
+    return 0;
+  return reg->masks[e - 1];
+}
+
+u32 ecs_get_number_of_entities(EcsRegistry reg) {
+  GREY_ASSERT(reg, "Null registry.");
   return reg->number_of_entities;
 }
-

@@ -13,5 +13,9 @@ else()
   add_executable(greg ${GAME_SOURCES})
 
   target_link_libraries(greg PRIVATE grey)
+  
+  install(TARGETS greg DESTINATION bin)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION assets)
 endif()
 
+include(CPack)

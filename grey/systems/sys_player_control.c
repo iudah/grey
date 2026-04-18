@@ -1,9 +1,12 @@
+#include "grey_assert.h"
 #include "grey_ecs.h"
 #include "grey_input.h"
 
 #define SYS_PLAYER_MASK (COMP_PLAYER | COMP_POSITION)
 
 void grey_sys_player_control(EcsRegistry reg) {
+  GREY_ASSERT(reg, "Null registry.");
+
   u32 n_entities = ecs_get_number_of_entities(reg);
   for (u32 i = 0; i < n_entities;) {
     Entity e = ++i;

@@ -4,5 +4,5 @@ target_include_directories(grey PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRE
 
 target_link_libraries(grey PUBLIC raylib)
 if(CMAKE_ANDROID_NDK)
-  target_compile_definitions(grey PRIVATE GREY_USE_TOUCH)
+  target_compile_definitions(grey PUBLIC GREY_USE_TOUCH GREY_TARGETS_ANDROID)
 endif()
