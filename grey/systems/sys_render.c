@@ -31,7 +31,7 @@ void grey_sys_render_draw(EcsRegistry reg) {
         RenderComponent *ren = ecs_get_render(reg, e);
 
         DrawRectangle(pos->x, pos->y, ren->width, ren->height,
-                      Fade(ren->color, 0.05f));
+                      Fade(ren->color, 0.15f));
       }
     }
   }

@@ -5,7 +5,6 @@
 #include "raylib.h"
 #include "systems/grey_systems.h"
 
-#include <stdlib.h>
 #include <string.h>
 #include <threads.h>
 
@@ -25,7 +24,7 @@ bool asset_path_init() {
   const char *raylib_app_dir = GetApplicationDirectory();
   GREY_ASSERT(raylib_app_dir, "Raylib failed to get application directory.");
 
-  char *assets = "/../assets/";
+  char *assets = "/assets/";
   u64 strlen_raylib_app_dir = strlen(raylib_app_dir);
   u64 strlen_assets = strlen(assets);
   grey_game_asset_path_len = strlen_raylib_app_dir + strlen_assets;
@@ -82,14 +81,15 @@ int main(void) {
   EcsRegistry reg = ecs_create(arena);
   Entity player = ecs_create_entity(reg);
 
-  Texture2D player_sprite = LoadTexture(asset_path("sprite.png"));
+  Texture2D player_sprite = LoadTexture(asset_path("character.png"));
 
   ecs_add_position(reg, player, 400, 200);
-  ecs_add_render(reg, player, 32, 32, BLUE);
+  ecs_add_render(reg, player, 64, 64, BLUE);
   ecs_add_player(reg, player);
-  ecs_add_sprite(reg, player, player_sprite, (Rectangle){0, 0, 128, 128},
-                 (SpriteSize){32, 32}, WHITE);
+  ecs_add_sprite(reg, player, player_sprite, (Rectangle){0, 0, 16, 24},
+                 (SpriteSize){64, 64}, WHITE);
   ecs_add_velocity(reg, player);
+  ecs_add_animator(reg, player, 1.0f, 5 * 16, 4, 3);
 
   while (!WindowShouldClose()) {
     grey_input_begin_frame();
@@ -97,6 +97,7 @@ int main(void) {
 
     grey_sys_player_control(reg);
     grey_sys_physics_update(reg);
+    grey_sys_animator_update(reg);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);

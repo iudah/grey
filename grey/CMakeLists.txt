@@ -1,4 +1,4 @@
-add_library(grey STATIC arena.c grey_ecs.c grey_input.c grey_input.h grey_ecs.h systems/sys_player_control.c systems/sys_render.c systems/sys_physics.c)
+add_library(grey STATIC arena.c grey_ecs.c grey_input.c grey_input.h grey_ecs.h systems/sys_player_control.c systems/sys_render.c systems/sys_physics.c systems/sys_animator.c)
 target_sources(grey PUBLIC grey_input.h grey_memory.h arena.h systems/grey_systems.h)
 target_include_directories(grey PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/systems)
 

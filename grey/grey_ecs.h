@@ -15,7 +15,8 @@ typedef enum {
   COMP_RENDER = 1 << 1,
   COMP_PLAYER = 1 << 2,
   COMP_SPRITE = 1 << 3,
-  COMP_VELOCITY = 1 << 4
+  COMP_VELOCITY = 1 << 4,
+  COMP_ANIMATOR = 1 << 5
 } ComponentMask;
 
 typedef struct {
@@ -35,7 +36,14 @@ typedef struct {
   Color tint;
 } SpriteComponent;
 typedef PositionComponent VelocityComponent;
-
+typedef struct {
+  f32 timer;
+  f32 frame_time;
+  u32 start_x;
+  u32 start_y;
+  u8 max_frame;
+  u8 current_frame;
+} AnimatorComponent;
 typedef struct ecs_registry *EcsRegistry;
 
 EcsRegistry ecs_create(Arena arena);
@@ -48,6 +56,8 @@ void ecs_add_player(EcsRegistry reg, Entity e);
 void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
                     SpriteSize dest, Color tint);
 void ecs_add_velocity(EcsRegistry reg, Entity e);
+void ecs_add_animator(EcsRegistry reg, Entity e, f32 frame_time,
+                      u32 tile_index_x, u32 tile_index_y, u8 max_frame);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);
@@ -55,5 +65,6 @@ PositionComponent *ecs_get_position(EcsRegistry reg, Entity e);
 RenderComponent *ecs_get_render(EcsRegistry reg, Entity e);
 SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e);
 VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity e);
+AnimatorComponent *ecs_get_animator(EcsRegistry reg, Entity e);
 
 #endif
