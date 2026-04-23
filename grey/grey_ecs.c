@@ -112,15 +112,14 @@ void ecs_add_velocity(EcsRegistry reg, Entity e) {
   reg->velocities[e - 1] = (VelocityComponent){0, 0};
 }
 
-void ecs_add_animator(EcsRegistry reg, Entity e, f32 frame_time,
-                      u32 tile_index_x, u32 tile_index_y, u8 max_frame) {
-
+void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
+                      u8 initial_clip_id) {
   if (!is_valid_entity(reg, e))
     return;
 
   reg->masks[e - 1] |= COMP_ANIMATOR;
-  reg->animators[e - 1] = (AnimatorComponent){
-      0, frame_time, tile_index_x, tile_index_y, max_frame, 0};
+  reg->animators[e - 1] =
+      (AnimatorComponent){action_anims, 0, initial_clip_id, 0};
 }
 
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {

@@ -37,11 +37,15 @@ typedef struct {
 } SpriteComponent;
 typedef PositionComponent VelocityComponent;
 typedef struct {
-  f32 timer;
   f32 frame_time;
   u32 start_x;
   u32 start_y;
   u8 max_frame;
+} AnimClip;
+typedef struct {
+  AnimClip *action_clips;
+  f32 timer;
+  u8 active_clip_id;
   u8 current_frame;
 } AnimatorComponent;
 typedef struct ecs_registry *EcsRegistry;
@@ -56,8 +60,8 @@ void ecs_add_player(EcsRegistry reg, Entity e);
 void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
                     SpriteSize dest, Color tint);
 void ecs_add_velocity(EcsRegistry reg, Entity e);
-void ecs_add_animator(EcsRegistry reg, Entity e, f32 frame_time,
-                      u32 tile_index_x, u32 tile_index_y, u8 max_frame);
+void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
+                      u8 initial_clip_id);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);

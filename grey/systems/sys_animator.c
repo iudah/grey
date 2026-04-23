@@ -15,19 +15,20 @@ void grey_sys_animator_update(EcsRegistry reg) {
 
     if (has_animator) {
       AnimatorComponent *anim = ecs_get_animator(reg, e);
-
+      AnimClip clip = anim->action_clips[anim->active_clip_id];
       SpriteComponent *spr = ecs_get_sprite(reg, e);
 
+      if (anim->current_frame >= clip.max_frame)
+        anim->current_frame = 0;
+
       anim->timer += GetFrameTime();
-      if (anim->timer >= anim->frame_time) {
+      if (anim->timer >= clip.frame_time) {
         anim->timer = 0;
         ++anim->current_frame;
-        if (anim->current_frame >= anim->max_frame)
-          anim->current_frame = 0;
       }
 
-      spr->src.x = anim->current_frame * spr->src.width + anim->start_x;
-      spr->src.y = anim->start_y;
+      spr->src.x = anim->current_frame * spr->src.width + clip.start_x;
+      spr->src.y = clip.start_y;
     }
   }
 }
