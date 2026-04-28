@@ -16,7 +16,8 @@ typedef enum {
   COMP_PLAYER = 1 << 2,
   COMP_SPRITE = 1 << 3,
   COMP_VELOCITY = 1 << 4,
-  COMP_ANIMATOR = 1 << 5
+  COMP_ANIMATOR = 1 << 5,
+  COMP_COLLIDER = 1 << 6
 } ComponentMask;
 
 typedef struct {
@@ -48,6 +49,12 @@ typedef struct {
   u8 active_clip_id;
   u8 current_frame;
 } AnimatorComponent;
+typedef struct {
+  f32 width;
+  f32 height;
+  f32 offset_x;
+  f32 offset_y;
+} ColliderComponent;
 typedef struct ecs_registry *EcsRegistry;
 
 EcsRegistry ecs_create(Arena arena);
@@ -62,6 +69,8 @@ void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
 void ecs_add_velocity(EcsRegistry reg, Entity e);
 void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
                       u8 initial_clip_id);
+void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
+                      f32 offset_x, f32 offset_y);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);
@@ -70,5 +79,6 @@ RenderComponent *ecs_get_render(EcsRegistry reg, Entity e);
 SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e);
 VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity e);
 AnimatorComponent *ecs_get_animator(EcsRegistry reg, Entity e);
+ColliderComponent *ecs_get_collider(EcsRegistry reg, Entity e);
 
 #endif

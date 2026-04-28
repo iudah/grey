@@ -10,6 +10,7 @@ struct ecs_registry {
   SpriteComponent *sprites;
   VelocityComponent *velocities;
   AnimatorComponent *animators;
+  ColliderComponent *colliders;
   u64 *masks;
   u32 number_of_entities;
 };
@@ -45,6 +46,8 @@ EcsRegistry ecs_create(Arena arena) {
       arena_allocate(arena, MAX_ENTITIES * sizeof(VelocityComponent));
   reg->animators =
       arena_allocate(arena, MAX_ENTITIES * sizeof(AnimatorComponent));
+  reg->colliders =
+      arena_allocate(arena, MAX_ENTITIES * sizeof(ColliderComponent));
 
   reg->masks = arena_allocate(arena, MAX_ENTITIES * sizeof(u64));
   reg->number_of_entities = 0;
@@ -122,6 +125,16 @@ void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
       (AnimatorComponent){action_anims, 0, initial_clip_id, 0};
 }
 
+void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
+                      f32 offset_x, f32 offset_y) {
+  if (!is_valid_entity(reg, e))
+    return;
+
+  reg->masks[e - 1] |= COMP_COLLIDER;
+  reg->colliders[e - 1] =
+      (ColliderComponent){width, height, offset_x, offset_y};
+}
+
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_POSITION))
     return NULL;
@@ -150,6 +163,12 @@ AnimatorComponent *ecs_get_animator(EcsRegistry reg, Entity e) {
   if (!has_component(reg, e, COMP_ANIMATOR))
     return NULL;
   return &reg->animators[e - 1];
+}
+
+ColliderComponent *ecs_get_collider(EcsRegistry reg, Entity e) {
+  if (!has_component(reg, e, COMP_COLLIDER))
+    return NULL;
+  return &reg->colliders[e - 1];
 }
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e) {
