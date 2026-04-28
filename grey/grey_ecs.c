@@ -126,13 +126,14 @@ void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
 }
 
 void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
-                      f32 offset_x, f32 offset_y) {
+                      f32 offset_x, f32 offset_y, bool is_trigger,
+                      u32 trigger_type) {
   if (!is_valid_entity(reg, e))
     return;
 
   reg->masks[e - 1] |= COMP_COLLIDER;
-  reg->colliders[e - 1] =
-      (ColliderComponent){width, height, offset_x, offset_y};
+  reg->colliders[e - 1] = (ColliderComponent){width, height, offset_x, offset_y,
+                                              is_trigger ? trigger_type : 0};
 }
 
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {

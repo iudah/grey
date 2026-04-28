@@ -40,7 +40,8 @@ void grey_sys_render_draw(EcsRegistry reg) {
         ColliderComponent *col = ecs_get_collider(reg, e);
 
         DrawRectangle(pos->x + col->offset_x, pos->y + col->offset_y,
-                      col->width, col->height, Fade(GREEN, 0.35f));
+                      col->width, col->height,
+                      Fade(col->trigger_type == 0 ? GREEN : BROWN, 0.35f));
       }
     }
   }

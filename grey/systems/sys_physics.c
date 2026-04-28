@@ -44,6 +44,8 @@ void grey_sys_physics_update(EcsRegistry reg) {
           PositionComponent *pos1 = ecs_get_position(reg, f);
           ColliderComponent *col1 = ecs_get_collider(reg, f);
 
+          bool is_trigger = col1->trigger_type != 0;
+
           f32 x1 = next_x + col->offset_x;
           f32 y1 = pos->y + col->offset_y;
 
@@ -52,6 +54,8 @@ void grey_sys_physics_update(EcsRegistry reg) {
 
           if (aabb_collide(x1, y1, col->width, col->height, //
                            x2, y2, col1->width, col1->height)) {
+            if (is_trigger)
+              continue;
             hit_x = true;
             break;
           }
@@ -75,6 +79,8 @@ void grey_sys_physics_update(EcsRegistry reg) {
           PositionComponent *pos1 = ecs_get_position(reg, f);
           ColliderComponent *col1 = ecs_get_collider(reg, f);
 
+          bool is_trigger = col1->trigger_type != 0;
+
           f32 x1 = next_x + col->offset_x;
           f32 y1 = next_y + col->offset_y;
 
@@ -83,6 +89,11 @@ void grey_sys_physics_update(EcsRegistry reg) {
 
           if (aabb_collide(x1, y1, col->width, col->height, //
                            x2, y2, col1->width, col1->height)) {
+            if (is_trigger) {
+              // ToDo: Fire trigger event
+              TERMLOG("Player hit a trigger!");
+              continue;
+            }
             hit_y = true;
             break;
           }

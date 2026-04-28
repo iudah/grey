@@ -127,27 +127,32 @@ int main(void) {
   };
 
   ecs_add_animator(reg, player, anim, IDLE_DOWN);
-  ecs_add_collider(reg, player, 24, 8, 20, 52);
+  ecs_add_collider(reg, player, 24, 8, 20, 52, false, 0);
 
   // Top Wall
   Entity wall_top = ecs_create_entity(reg);
   ecs_add_position(reg, wall_top, 0, -10);
-  ecs_add_collider(reg, wall_top, 800, 10, 0, 0);
+  ecs_add_collider(reg, wall_top, 800, 10, 0, 0, false, 0);
 
   // Bottom Wall
   Entity wall_bottom = ecs_create_entity(reg);
   ecs_add_position(reg, wall_bottom, 0, 450);
-  ecs_add_collider(reg, wall_bottom, 800, 10, 0, 0);
+  ecs_add_collider(reg, wall_bottom, 800, 10, 0, 0, false, 0);
 
   // Left Wall
   Entity wall_left = ecs_create_entity(reg);
   ecs_add_position(reg, wall_left, -10, 0);
-  ecs_add_collider(reg, wall_left, 10, 450, 0, 0);
+  ecs_add_collider(reg, wall_left, 10, 450, 0, 0, false, 0);
 
   // Right Wall
   Entity wall_right = ecs_create_entity(reg);
   ecs_add_position(reg, wall_right, 800, 0);
-  ecs_add_collider(reg, wall_right, 10, 450, 0, 0);
+  ecs_add_collider(reg, wall_right, 10, 450, 0, 0, false, 0);
+
+  // Trigger box
+  Entity trig_box = ecs_create_entity(reg);
+  ecs_add_position(reg, trig_box, 600, 100);
+  ecs_add_collider(reg, trig_box, 100, 250, 0, 0, true, 1);
 
   while (!WindowShouldClose()) {
     grey_input_begin_frame();

@@ -54,6 +54,7 @@ typedef struct {
   f32 height;
   f32 offset_x;
   f32 offset_y;
+  u32 trigger_type;
 } ColliderComponent;
 typedef struct ecs_registry *EcsRegistry;
 
@@ -70,7 +71,8 @@ void ecs_add_velocity(EcsRegistry reg, Entity e);
 void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
                       u8 initial_clip_id);
 void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
-                      f32 offset_x, f32 offset_y);
+                      f32 offset_x, f32 offset_y, bool is_trigger,
+                      u32 trigger_type);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);
