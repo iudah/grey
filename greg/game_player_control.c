@@ -21,14 +21,18 @@ void game_player_control(EcsRegistry reg) {
 
       if (grey_input_is_down(ACTION_RIGHT)) {
         vel->x = 60;
+        vel->y = 0;
         anim->active_clip_id = WALK_RIGHT;
       } else if (grey_input_is_down(ACTION_LEFT)) {
         vel->x = -60;
+        vel->y = 0;
         anim->active_clip_id = WALK_LEFT;
       } else if (grey_input_is_down(ACTION_UP)) {
+        vel->x = 0;
         vel->y = -60;
         anim->active_clip_id = WALK_UP;
       } else if (grey_input_is_down(ACTION_DOWN)) {
+        vel->x = 0;
         vel->y = 60;
         anim->active_clip_id = WALK_DOWN;
       } else {

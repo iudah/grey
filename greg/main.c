@@ -75,7 +75,8 @@ int main(void) {
   ToggleFullscreen();
   SetTargetFPS(60);
 
-  grey_input_init();
+  grey_input_init(GREY_JOYSTICK);
+  grey_default_action_btn();
   asset_path_init();
 
   Arena arena = arena_create(1024 * 1024);
