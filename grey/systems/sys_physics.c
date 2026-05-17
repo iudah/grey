@@ -1,117 +1,144 @@
 #include "grey_assert.h"
 #include "grey_ecs.h"
+#include "grey_tilemap.h"
 #include "raylib.h"
 #include "type_alias.h"
 
 #define SYS_PHYSICS_MASK (COMP_POSITION | COMP_VELOCITY)
 #define SYS_COLLIDER_MASK (COMP_POSITION | COMP_COLLIDER)
 
-static inline bool aabb_collide(f32 x1, f32 y1, f32 w1, f32 h1, f32 x2, f32 y2,
-                                f32 w2, f32 h2) {
-  return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+static inline bool aabb_collide(f32 x_1, f32 y_1, f32 w_1, f32 h_1, f32 x_2,
+                                f32 y_2, f32 w_2, f32 h_2) {
+  return (bool)(x_1 < x_2 + w_2 && x_1 + w_1 > x_2 && y_1 < y_2 + h_2 &&
+                y_1 + h_1 > y_2);
 }
 
-void grey_sys_physics_update(EcsRegistry reg) {
+bool check_tilemap_collision(GreyTileMap *map, Vector2 next,
+                             ColliderComponent *col, TileDef *tile_set) {
+  if (!map || !map->grid)
+    return false;
+
+  bool hit = false;
+
+#define GAP (0.1f)
+  auto left = next.x + col->offset_x;
+  auto right = left + col->width;
+  auto top = next.y + col->offset_y;
+  auto bottom = top + col->height - GAP;
+
+  auto grid_l = (i32)(left / map->tile_size);
+  auto grid_r = (i32)(right / map->tile_size);
+  auto grid_t = (i32)(top / map->tile_size);
+  auto grid_b = (i32)(bottom / map->tile_size);
+
+  if (grid_l >= 0 && grid_r < map->grid_width && grid_t >= 0 &&
+      grid_b < map->grid_height) {
+
+    auto grid_width = map->grid_width;
+    u32 ids[] = {map->grid[(grid_t * grid_width) + grid_l],
+                 map->grid[(grid_b * grid_width) + grid_l],
+                 map->grid[(grid_t * grid_width) + grid_r],
+                 map->grid[(grid_b * grid_width) + grid_r]};
+
+    for (u32 i = 0; i < 4; ++i) {
+      if (tile_set[ids[i]].trigger) {
+        // TODO: trigger event
+      }
+
+      if (tile_set[ids[i]].solid) {
+        hit = (bool)((int)hit || (int)true);
+      }
+    }
+
+  } else {
+    return true;
+  }
+
+  return hit;
+}
+
+bool check_ecs_collision(EcsRegistry reg, Entity entity, ColliderComponent *col,
+                         Vector2 next, u32 n_entities) {
+  bool hit = false;
+
+  for (u32 j = 1; j <= n_entities; ++j) {
+    Entity other = j;
+    if (other == entity)
+      continue;
+
+    if ((ecs_get_mask(reg, other) & SYS_COLLIDER_MASK) != SYS_COLLIDER_MASK) {
+      continue;
+    }
+
+    PositionComponent *pos1 = ecs_get_position(reg, other);
+    ColliderComponent *col1 = ecs_get_collider(reg, other);
+
+    bool is_trigger = col1->trigger_type != 0;
+
+    f32 x_1 = next.x + col->offset_x;
+    f32 y_1 = next.y + col->offset_y;
+
+    f32 x_2 = pos1->x + col1->offset_x;
+    f32 y_2 = pos1->y + col1->offset_y;
+
+    if (aabb_collide(x_1, y_1, col->width, col->height, //
+                     x_2, y_2, col1->width, col1->height)) {
+      if (is_trigger) {
+        // TODO: trigger event
+        continue;
+      }
+      hit = (bool)((int)hit || (int)true);
+    }
+  }
+
+  return hit;
+}
+
+void grey_sys_physics_update(EcsRegistry reg, GreyTileMap *map,
+                             TileDef *tile_set) {
   GREY_ASSERT(reg, "Null registry");
 
-  f32 dt = GetFrameTime();
+  f32 delta_time = GetFrameTime();
   u32 n_entities = ecs_get_number_of_entities(reg);
   for (u32 i = 1; i <= n_entities; ++i) {
-    Entity e = i;
-    ComponentMask mask = ecs_get_mask(reg, e);
+    Entity entity = i;
+    ComponentMask mask = ecs_get_mask(reg, entity);
     bool has_physics = (mask & SYS_PHYSICS_MASK) == SYS_PHYSICS_MASK;
     bool has_collider = (mask & SYS_COLLIDER_MASK) == SYS_COLLIDER_MASK;
 
-    if (has_collider || has_physics) {
-      PositionComponent *pos = ecs_get_position(reg, e);
-      if (has_collider && has_physics) {
-        ColliderComponent *col = ecs_get_collider(reg, e);
-        VelocityComponent *vel = ecs_get_velocity(reg, e);
+    if ((int)has_collider || (int)has_physics) {
+      PositionComponent *pos = ecs_get_position(reg, entity);
+      if ((int)has_collider && (int)has_physics) {
+        ColliderComponent *col = ecs_get_collider(reg, entity);
+        VelocityComponent *vel = ecs_get_velocity(reg, entity);
 
-        f32 next_x = pos->x + vel->x * dt;
-        f32 next_y = pos->y + vel->y * dt;
+        Vector2 next = {pos->x + (vel->x * delta_time), pos->y};
 
-        bool hit_x = false;
-        for (u32 j = 1; j <= n_entities; ++j) {
-          Entity f = j;
-          if (f == e)
-            continue;
-
-          if ((ecs_get_mask(reg, f) & SYS_COLLIDER_MASK) != SYS_COLLIDER_MASK) {
-            continue;
-          }
-
-          PositionComponent *pos1 = ecs_get_position(reg, f);
-          ColliderComponent *col1 = ecs_get_collider(reg, f);
-
-          bool is_trigger = col1->trigger_type != 0;
-
-          f32 x1 = next_x + col->offset_x;
-          f32 y1 = pos->y + col->offset_y;
-
-          f32 x2 = pos1->x + col1->offset_x;
-          f32 y2 = pos1->y + col1->offset_y;
-
-          if (aabb_collide(x1, y1, col->width, col->height, //
-                           x2, y2, col1->width, col1->height)) {
-            if (is_trigger)
-              continue;
-            hit_x = true;
-            break;
-          }
-        }
+        bool hit_x = check_ecs_collision(reg, entity, col, next, n_entities) ||
+                     check_tilemap_collision(map, next, col, tile_set);
 
         if (hit_x) {
-          next_x = pos->x;
+          next.x = pos->x;
           vel->x = 0;
         }
 
-        bool hit_y = false;
-        for (u32 j = 1; j <= n_entities; ++j) {
-          Entity f = j;
-          if (f == e)
-            continue;
-
-          if ((ecs_get_mask(reg, f) & SYS_COLLIDER_MASK) != SYS_COLLIDER_MASK) {
-            continue;
-          }
-
-          PositionComponent *pos1 = ecs_get_position(reg, f);
-          ColliderComponent *col1 = ecs_get_collider(reg, f);
-
-          bool is_trigger = col1->trigger_type != 0;
-
-          f32 x1 = next_x + col->offset_x;
-          f32 y1 = next_y + col->offset_y;
-
-          f32 x2 = pos1->x + col1->offset_x;
-          f32 y2 = pos1->y + col1->offset_y;
-
-          if (aabb_collide(x1, y1, col->width, col->height, //
-                           x2, y2, col1->width, col1->height)) {
-            if (is_trigger) {
-              // ToDo: Fire trigger event
-              TERMLOG("Player hit a trigger!");
-              continue;
-            }
-            hit_y = true;
-            break;
-          }
-        }
+        next.y = pos->y + (vel->y * delta_time);
+        bool hit_y = check_tilemap_collision(map, next, col, tile_set) ||
+                     check_ecs_collision(reg, entity, col, next, n_entities);
 
         if (hit_y) {
-          next_y = pos->y;
+          next.y = pos->y;
           vel->y = 0;
         }
 
-        pos->x = next_x;
-        pos->y = next_y;
+        pos->x = next.x;
+        pos->y = next.y;
 
       } else if (has_physics) {
-        VelocityComponent *vel = ecs_get_velocity(reg, e);
+        VelocityComponent *vel = ecs_get_velocity(reg, entity);
 
-        pos->x += vel->x * dt;
-        pos->y += vel->y * dt;
+        pos->x += vel->x * delta_time;
+        pos->y += vel->y * delta_time;
       }
     }
   }

@@ -20,6 +20,7 @@ typedef enum { STICK_BASE, STICK_KNOB } GreyStick;
 typedef struct {
   Vector2 btn_cntr;
   f32 btn_rad;
+  f32 btn_rad_;
 } VirtualButton;
 VirtualKey keys[ACTION_MAX] = {0};
 VirtualButton button[ACT_BTN_MAX] = {0};
@@ -160,15 +161,27 @@ void grey_input_update() {
   knobs[STICK_KNOB].pad_center = knobs[STICK_BASE].pad_center;
   stick_vec = (Vector2){0, 0};
 
+  static i32 active_stick_id = -1;
+  bool stick_touched_this_frame = false;
   if (gamepad_mode == GREY_JOYSTICK) {
-    for (i32 i = 0; i < touch_count; ++i) {
+    auto n_touch = touch_count;
+
+    for (i32 i = 0; i < n_touch; ++i) {
       Vector2 pos = GetTouchPosition(i);
+      i32 stick_id = GetTouchPointId(i);
 
       f32 dist = Vector2Distance(pos, knobs[STICK_BASE].pad_center);
-      if (dist > base_unit * 1.5f)
+
+      bool is_tracking = stick_id == active_stick_id;
+      f32 unit = is_tracking ? 5.0f : 1.5f;
+
+      if (dist > base_unit * unit)
         continue;
       if (dist < base_unit * 0.1f)
         continue;
+
+      active_stick_id = stick_id;
+      stick_touched_this_frame = true;
 
       auto visual_dist = dist > base_unit ? base_unit : dist;
       stick_vec =
@@ -185,16 +198,24 @@ void grey_input_update() {
         touch_down[ACTION_DOWN] = true;
       if (stick_vec.y < -0.5f)
         touch_down[ACTION_UP] = true;
+
+      break;
+    }
+    if (!stick_touched_this_frame) {
+      active_stick_id = -1;
     }
   }
   for (i32 i = 0; i < touch_count; ++i) {
     Vector2 pos = GetTouchPosition(i);
 
     for (GreyAction j = 0; j < ACT_BTN_MAX; ++j) {
-      if (button[j].btn_rad > 1e-5 &&
-          CheckCollisionPointCircle(pos, button[j].btn_cntr,
-                                    button[j].btn_rad)) {
-        touch_down[j + DPAD_MAX] = true;
+      if (button[j].btn_rad > 1e-5) {
+        if (CheckCollisionPointCircle(pos, button[j].btn_cntr,
+                                      button[j].btn_rad)) {
+          touch_down[j + DPAD_MAX] = true;
+          button[j].btn_rad = button[j].btn_rad_ * 1.25f;
+        } else {
+        }
       }
     }
   }
@@ -265,6 +286,7 @@ static inline void grey_input_draw_game_action_pad() {
     if (button[k].btn_rad > 0) {
       DrawCircleV(button[k].btn_cntr, button[k].btn_rad, pad_color);
       DrawCircleLinesV(button[k].btn_cntr, button[k].btn_rad, border_color);
+      button[k].btn_rad = button[k].btn_rad_;
     }
   }
 }
@@ -281,6 +303,7 @@ void grey_set_action_btn(GreyAction action, Vector2 cntr, f32 rad) {
   if (action < DPAD_MAX || action >= ACTION_MAX)
     return;
   button[action - DPAD_MAX].btn_cntr = cntr;
+  button[action - DPAD_MAX].btn_rad_ = rad;
   button[action - DPAD_MAX].btn_rad = rad;
 }
 

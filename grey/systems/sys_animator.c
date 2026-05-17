@@ -9,14 +9,14 @@ void grey_sys_animator_update(EcsRegistry reg) {
 
   u32 n_entities = ecs_get_number_of_entities(reg);
   for (u32 i = 1; i <= n_entities; ++i) {
-    Entity e = i;
-    ComponentMask mask = ecs_get_mask(reg, e);
+    Entity entity = i;
+    ComponentMask mask = ecs_get_mask(reg, entity);
     bool has_animator = (mask & SYS_ANIMATOR_MASK) == SYS_ANIMATOR_MASK;
 
     if (has_animator) {
-      AnimatorComponent *anim = ecs_get_animator(reg, e);
+      AnimatorComponent *anim = ecs_get_animator(reg, entity);
       AnimClip clip = anim->action_clips[anim->active_clip_id];
-      SpriteComponent *spr = ecs_get_sprite(reg, e);
+      SpriteComponent *spr = ecs_get_sprite(reg, entity);
 
       if (anim->current_frame >= clip.max_frame)
         anim->current_frame = 0;
@@ -27,7 +27,7 @@ void grey_sys_animator_update(EcsRegistry reg) {
         ++anim->current_frame;
       }
 
-      spr->src.x = anim->current_frame * spr->src.width + clip.start_x;
+      spr->src.x = (anim->current_frame * spr->src.width) + clip.start_x;
       spr->src.y = clip.start_y;
     }
   }

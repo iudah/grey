@@ -4,6 +4,7 @@
 #include "grey_assert.h"
 #include "grey_ecs.h"
 #include "grey_input.h"
+#include "grey_tilemap.h"
 #include "raylib.h"
 #include "systems/grey_systems.h"
 
@@ -70,27 +71,43 @@ char *asset_path(const char *asset) {
 #endif
 }
 
+// Define a small 10x10 map. (1 = Grass, 2 = Wall, 3 = Water)
+#define MAP_W 10
+#define MAP_H 10
+u8 level_one_data[MAP_H][MAP_W] = {
+    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 3, 2},
+    {2, 1, 1, 1, 1, 1, 1, 3, 3, 2}, {2, 1, 1, 1, 1, 1, 1, 3, 3, 2},
+    {2, 2, 2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 1, 2},
+    {2, 1, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 1, 2},
+    {2, 1, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 2, 2, 2, 2, 2, 2, 2, 2, 2}};
+
 int main(void) {
-  InitWindow(800, 450, "Grey Engine: M3");
+#define SCREEN_WIDTH (800)
+#define SCREEN_HEIGHT (450)
+#define FPS (60)
+#define KB (1024)
+#define SPRITE_SIZE (64)
+
+  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Grey Engine: M3");
   ToggleFullscreen();
-  SetTargetFPS(60);
+  SetTargetFPS(FPS);
 
   grey_input_init(GREY_JOYSTICK);
   grey_default_action_btn();
   asset_path_init();
 
-  Arena arena = arena_create(1024 * 1024);
+  Arena arena = arena_create(KB * KB);
 
   EcsRegistry reg = ecs_create(arena);
   Texture2D player_sprite = LoadTexture(asset_path("character.png"));
 
   Entity player = ecs_create_entity(reg);
 
-  ecs_add_position(reg, player, 400, 200);
-  ecs_add_render(reg, player, 64, 64, BLUE);
+  ecs_add_position(reg, player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  ecs_add_render(reg, player, SPRITE_SIZE, SPRITE_SIZE, BLUE);
   ecs_add_player(reg, player);
   ecs_add_sprite(reg, player, player_sprite, (Rectangle){0, 0, 16, 24},
-                 (SpriteSize){64, 64}, WHITE);
+                 (SpriteSize){SPRITE_SIZE, SPRITE_SIZE}, WHITE);
   ecs_add_velocity(reg, player);
   AnimClip anim[] = {
       [IDLE_DOWN] = {.frame_time = 1,
@@ -130,6 +147,7 @@ int main(void) {
   ecs_add_animator(reg, player, anim, IDLE_DOWN);
   ecs_add_collider(reg, player, 24, 8, 20, 52, false, 0);
 
+#if 0
   // Top Wall
   Entity wall_top = ecs_create_entity(reg);
   ecs_add_position(reg, wall_top, 0, -10);
@@ -154,6 +172,13 @@ int main(void) {
   Entity trig_box = ecs_create_entity(reg);
   ecs_add_position(reg, trig_box, 600, 100);
   ecs_add_collider(reg, trig_box, 100, 250, 0, 0, true, 1);
+#endif
+
+  TileDef tile_set[] = {[1] = {.solid = false, .trigger = false},
+                        [2] = {.solid = true, .trigger = false},
+                        [3] = {.solid = false, .trigger = true}};
+
+  GreyTileMap map = {(u8 *)level_one_data, MAP_H, MAP_W, 64};
 
   while (!WindowShouldClose()) {
     grey_input_begin_frame();
@@ -161,14 +186,14 @@ int main(void) {
 
     game_player_control(reg);
 
-    grey_sys_physics_update(reg);
+    grey_sys_physics_update(reg, &map, tile_set);
     grey_sys_animator_update(reg);
 
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+    ClearBackground(BLACK);
 
+    grey_draw_tilemap(&map);
     grey_sys_render_draw(reg);
-
     grey_input_draw_gamepad();
 
     EndDrawing();
