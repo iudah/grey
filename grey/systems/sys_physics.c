@@ -1,5 +1,6 @@
 #include "grey_assert.h"
 #include "grey_ecs.h"
+#include "grey_events.h"
 #include "grey_tilemap.h"
 #include "raylib.h"
 #include "type_alias.h"
@@ -14,7 +15,8 @@ static inline bool aabb_collide(f32 x_1, f32 y_1, f32 w_1, f32 h_1, f32 x_2,
 }
 
 bool check_tilemap_collision(GreyTileMap *map, Vector2 next,
-                             ColliderComponent *col, TileDef *tile_set) {
+                             ColliderComponent *col, TileDef *tile_set,
+                             GreyEvents event_system) {
   if (!map || !map->grid)
     return false;
 
@@ -35,14 +37,26 @@ bool check_tilemap_collision(GreyTileMap *map, Vector2 next,
       grid_b < map->grid_height) {
 
     auto grid_width = map->grid_width;
-    u32 ids[] = {map->grid[(grid_t * grid_width) + grid_l],
-                 map->grid[(grid_b * grid_width) + grid_l],
-                 map->grid[(grid_t * grid_width) + grid_r],
-                 map->grid[(grid_b * grid_width) + grid_r]};
+    u32 grid[] = {
+        (grid_t * grid_width) + grid_l,
+        (grid_b * grid_width) + grid_l,
+        (grid_t * grid_width) + grid_r,
+        (grid_b * grid_width) + grid_r,
+    };
+    u32 ids[] = {
+        map->grid[grid[0]],
+        map->grid[grid[1]],
+        map->grid[grid[2]],
+        map->grid[grid[3]],
+    };
 
     for (u32 i = 0; i < 4; ++i) {
       if (tile_set[ids[i]].trigger) {
-        // TODO: trigger event
+        GreyEvent event = {
+            .type = TRIGGER_EVENT,
+            .as.trigger = {.trigger_id = tile_set[ids[i]].trigger_id,
+                           .map_grid_idx = grid[i]}};
+        event_system_add_event(event_system, event);
       }
 
       if (tile_set[ids[i]].solid) {
@@ -58,7 +72,8 @@ bool check_tilemap_collision(GreyTileMap *map, Vector2 next,
 }
 
 bool check_ecs_collision(EcsRegistry reg, Entity entity, ColliderComponent *col,
-                         Vector2 next, u32 n_entities) {
+                         Vector2 next, u32 n_entities,
+                         GreyEvents event_system) {
   bool hit = false;
 
   for (u32 j = 1; j <= n_entities; ++j) {
@@ -84,7 +99,13 @@ bool check_ecs_collision(EcsRegistry reg, Entity entity, ColliderComponent *col,
     if (aabb_collide(x_1, y_1, col->width, col->height, //
                      x_2, y_2, col1->width, col1->height)) {
       if (is_trigger) {
-        // TODO: trigger event
+        GreyEvent event = {.type = TRIGGER_EVENT,
+                           .as.trigger = {
+                               .trigger_id = col1->trigger_type,
+                               .entity = entity,
+                               .other = other,
+                           }};
+        event_system_add_event(event_system, event);
         continue;
       }
       hit = (bool)((int)hit || (int)true);
@@ -95,7 +116,7 @@ bool check_ecs_collision(EcsRegistry reg, Entity entity, ColliderComponent *col,
 }
 
 void grey_sys_physics_update(EcsRegistry reg, GreyTileMap *map,
-                             TileDef *tile_set) {
+                             TileDef *tile_set, GreyEvents event_system) {
   GREY_ASSERT(reg, "Null registry");
 
   f32 delta_time = GetFrameTime();
@@ -114,8 +135,10 @@ void grey_sys_physics_update(EcsRegistry reg, GreyTileMap *map,
 
         Vector2 next = {pos->x + (vel->x * delta_time), pos->y};
 
-        bool hit_x = check_ecs_collision(reg, entity, col, next, n_entities) ||
-                     check_tilemap_collision(map, next, col, tile_set);
+        bool hit_x =
+            check_ecs_collision(reg, entity, col, next, n_entities,
+                                event_system) ||
+            check_tilemap_collision(map, next, col, tile_set, event_system);
 
         if (hit_x) {
           next.x = pos->x;
@@ -123,8 +146,10 @@ void grey_sys_physics_update(EcsRegistry reg, GreyTileMap *map,
         }
 
         next.y = pos->y + (vel->y * delta_time);
-        bool hit_y = check_tilemap_collision(map, next, col, tile_set) ||
-                     check_ecs_collision(reg, entity, col, next, n_entities);
+        bool hit_y =
+            check_tilemap_collision(map, next, col, tile_set, event_system) ||
+            check_ecs_collision(reg, entity, col, next, n_entities,
+                                event_system);
 
         if (hit_y) {
           next.y = pos->y;

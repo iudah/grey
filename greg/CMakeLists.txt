@@ -1,4 +1,4 @@
-set(GAME_SOURCES main.c game_player_control.c)
+set(GAME_SOURCES main.c game_player_control.c game_systems.c)
 
 if(CMAKE_ANDROID_NDK)
   message(STATUS "Building game as Android shared library")

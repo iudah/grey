@@ -12,4 +12,10 @@ typedef enum {
   WALK_RIGHT
 } AnimId;
 
+typedef enum {
+  WATER_TILE = 1,
+  ONE_WAY_ENTRY_TRIGGER,
+  ONE_WAY_EXIT_TRIGGER,
+} GameTriggers;
+
 #endif

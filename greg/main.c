@@ -3,11 +3,13 @@
 #include "game_player_control.h"
 #include "grey_assert.h"
 #include "grey_ecs.h"
+#include "grey_events.h"
 #include "grey_input.h"
 #include "grey_tilemap.h"
 #include "raylib.h"
 #include "systems/grey_systems.h"
 
+#include <stdint.h>
 #include <string.h>
 #include <threads.h>
 
@@ -79,9 +81,11 @@ u8 level_one_data[MAP_H][MAP_W] = {
     {2, 1, 1, 1, 1, 1, 1, 3, 3, 2}, {2, 1, 1, 1, 1, 1, 1, 3, 3, 2},
     {2, 2, 2, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 1, 2},
     {2, 1, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 1, 1, 1, 1, 1, 1, 1, 1, 2},
-    {2, 1, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 2, 2, 2, 2, 2, 2, 2, 2, 2}};
+    {2, 1, 1, 1, 1, 1, 1, 1, 1, 2}, {2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+};
 
 int main(void) {
+
 #define SCREEN_WIDTH (800)
 #define SCREEN_HEIGHT (450)
 #define FPS (60)
@@ -99,8 +103,10 @@ int main(void) {
   Arena arena = arena_create(KB * KB);
 
   EcsRegistry reg = ecs_create(arena);
-  Texture2D player_sprite = LoadTexture(asset_path("character.png"));
 
+  GreyEvents events_system = event_system_create(arena);
+
+  Texture2D player_sprite = LoadTexture(asset_path("character.png"));
   Entity player = ecs_create_entity(reg);
 
   ecs_add_position(reg, player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
@@ -147,47 +153,43 @@ int main(void) {
   ecs_add_animator(reg, player, anim, IDLE_DOWN);
   ecs_add_collider(reg, player, 24, 8, 20, 52, false, 0);
 
-#if 0
-  // Top Wall
-  Entity wall_top = ecs_create_entity(reg);
-  ecs_add_position(reg, wall_top, 0, -10);
-  ecs_add_collider(reg, wall_top, 800, 10, 0, 0, false, 0);
+  u8 *one_way_trigger[MAX_ENTITIES] = {nullptr};
 
-  // Bottom Wall
-  Entity wall_bottom = ecs_create_entity(reg);
-  ecs_add_position(reg, wall_bottom, 0, 450);
-  ecs_add_collider(reg, wall_bottom, 800, 10, 0, 0, false, 0);
+  Entity one_way_entry = ecs_create_entity(reg);
+  ecs_add_position(reg, one_way_entry, 2 * 64, 4 * 64 - 4);
+  ecs_add_collider(reg, one_way_entry, 64, 4, 2, 0, true,
+                   ONE_WAY_ENTRY_TRIGGER);
 
-  // Left Wall
-  Entity wall_left = ecs_create_entity(reg);
-  ecs_add_position(reg, wall_left, -10, 0);
-  ecs_add_collider(reg, wall_left, 10, 450, 0, 0, false, 0);
+  Entity one_way_exit = ecs_create_entity(reg);
+  ecs_add_position(reg, one_way_exit, 2 * 64, 5 * 64);
+  ecs_add_collider(reg, one_way_exit, 60, 4, 2, 8, true, ONE_WAY_EXIT_TRIGGER);
 
-  // Right Wall
-  Entity wall_right = ecs_create_entity(reg);
-  ecs_add_position(reg, wall_right, 800, 0);
-  ecs_add_collider(reg, wall_right, 10, 450, 0, 0, false, 0);
+  Entity one_way_block = ecs_create_entity(reg);
+  ecs_add_position(reg, one_way_block, 3 * 64, 4 * 64);
+  ecs_add_collider(reg, one_way_block, 4, 64, 0, 0, false, 0);
 
-  // Trigger box
-  Entity trig_box = ecs_create_entity(reg);
-  ecs_add_position(reg, trig_box, 600, 100);
-  ecs_add_collider(reg, trig_box, 100, 250, 0, 0, true, 1);
-#endif
+  one_way_trigger[one_way_entry] = &level_one_data[4][2];
+  one_way_trigger[one_way_exit] = &level_one_data[4][2];
 
-  TileDef tile_set[] = {[1] = {.solid = false, .trigger = false},
-                        [2] = {.solid = true, .trigger = false},
-                        [3] = {.solid = false, .trigger = true}};
+  TileDef tile_set[] = {
+      [1] = {.solid = false, .trigger = false},
+      [2] = {.solid = true, .trigger = false},
+      [3] = {.solid = false, .trigger = true, .trigger_id = WATER_TILE}};
 
   GreyTileMap map = {(u8 *)level_one_data, MAP_H, MAP_W, 64};
 
   while (!WindowShouldClose()) {
+    event_system_reset(events_system);
+
     grey_input_begin_frame();
     grey_input_update();
 
     game_player_control(reg);
 
-    grey_sys_physics_update(reg, &map, tile_set);
+    grey_sys_physics_update(reg, &map, tile_set, events_system);
     grey_sys_animator_update(reg);
+
+    game_system_trigger_update(events_system, one_way_trigger);
 
     BeginDrawing();
     ClearBackground(BLACK);

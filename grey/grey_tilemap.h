@@ -17,6 +17,7 @@ typedef struct {
   Rectangle tex_src;
   bool solid;
   bool trigger;
+  u32 trigger_id;
 } TileDef;
 
 bool grey_draw_tilemap(GreyTileMap *map);
