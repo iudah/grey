@@ -1,6 +1,7 @@
 #include "grey_ecs.h"
 #include "arena.h"
 #include "grey_assert.h"
+#include "raylib.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -11,22 +12,24 @@ struct ecs_registry {
   VelocityComponent *velocities;
   AnimatorComponent *animators;
   ColliderComponent *colliders;
+  CameraComponent *cameras;
   u64 *masks;
   u32 number_of_entities;
 };
 
-static inline bool is_valid_entity(EcsRegistry reg, Entity e) {
+static inline bool is_valid_entity(EcsRegistry reg, Entity entity) {
   GREY_ASSERT(reg, "Null registry passed.");
-  GREY_ASSERT(e >= 1 && e <= reg->number_of_entities, "Invalid entity.");
-  return e >= 1 && e <= reg->number_of_entities;
+  GREY_ASSERT(entity >= 1 && entity <= reg->number_of_entities,
+              "Invalid entity.");
+  return entity >= 1 && entity <= reg->number_of_entities;
 }
 
-static inline bool has_component(EcsRegistry reg, Entity e,
+static inline bool has_component(EcsRegistry reg, Entity entity,
                                  ComponentMask mask) {
-  if (!is_valid_entity(reg, e))
+  if (!is_valid_entity(reg, entity))
     return false;
 
-  u64 comps = reg->masks[e - 1];
+  u64 comps = reg->masks[entity - 1];
   return (comps & mask) != 0;
 }
 
@@ -36,7 +39,7 @@ EcsRegistry ecs_create(Arena arena) {
   EcsRegistry reg = arena_allocate(arena, sizeof(*reg));
 
   if (!reg)
-    return NULL;
+    return nullptr;
 
   reg->positions =
       arena_allocate(arena, MAX_ENTITIES * sizeof(PositionComponent));
@@ -48,6 +51,7 @@ EcsRegistry ecs_create(Arena arena) {
       arena_allocate(arena, MAX_ENTITIES * sizeof(AnimatorComponent));
   reg->colliders =
       arena_allocate(arena, MAX_ENTITIES * sizeof(ColliderComponent));
+  reg->cameras = arena_allocate(arena, MAX_ENTITIES * sizeof(CameraComponent));
 
   reg->masks = arena_allocate(arena, MAX_ENTITIES * sizeof(u64));
   reg->number_of_entities = 0;
@@ -67,115 +71,133 @@ Entity ecs_create_entity(EcsRegistry reg) {
   return ++reg->number_of_entities;
 }
 
-void ecs_destroy_entity(EcsRegistry reg, Entity e) {
-  if (!is_valid_entity(reg, e))
+void ecs_destroy_entity(EcsRegistry reg, Entity entity) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] = 0;
+  reg->masks[entity - 1] = 0;
 }
 
-void ecs_add_position(EcsRegistry reg, Entity e, f32 x, f32 y) {
-  if (!is_valid_entity(reg, e))
+void ecs_add_position(EcsRegistry reg, Entity entity, f32 x_pos, f32 y_pos) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_POSITION;
-  reg->positions[e - 1] = (PositionComponent){x, y};
+  reg->masks[entity - 1] |= COMP_POSITION;
+  reg->positions[entity - 1] = (PositionComponent){x_pos, y_pos};
 }
 
-void ecs_add_render(EcsRegistry reg, Entity e, f32 w, f32 h, Color color) {
-  if (!is_valid_entity(reg, e))
+void ecs_add_render(EcsRegistry reg, Entity entity, f32 width, f32 height,
+                    Color color) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_RENDER;
-  reg->render[e - 1] = (RenderComponent){w, h, color};
+  reg->masks[entity - 1] |= COMP_RENDER;
+  reg->render[entity - 1] = (RenderComponent){width, height, color};
 }
 
-void ecs_add_player(EcsRegistry reg, Entity e) {
-  if (!is_valid_entity(reg, e))
+void ecs_add_player(EcsRegistry reg, Entity entity) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_PLAYER;
+  reg->masks[entity - 1] |= COMP_PLAYER;
 }
 
-void ecs_add_sprite(EcsRegistry reg, Entity e, Texture2D texture, Rectangle src,
-                    SpriteSize dest, Color tint) {
-  if (!is_valid_entity(reg, e))
+void ecs_add_sprite(EcsRegistry reg, Entity entity, Texture2D texture,
+                    Rectangle src, SpriteSize dest, Color tint) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_SPRITE;
-  reg->sprites[e - 1] = (SpriteComponent){
+  reg->masks[entity - 1] |= COMP_SPRITE;
+  reg->sprites[entity - 1] = (SpriteComponent){
       .texture = texture, .src = src, .tint = tint, .dest = dest};
 }
 
-void ecs_add_velocity(EcsRegistry reg, Entity e) {
-  if (!is_valid_entity(reg, e))
+void ecs_add_velocity(EcsRegistry reg, Entity entity) {
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_VELOCITY;
-  reg->velocities[e - 1] = (VelocityComponent){0, 0};
+  reg->masks[entity - 1] |= COMP_VELOCITY;
+  reg->velocities[entity - 1] = (VelocityComponent){0, 0};
 }
 
-void ecs_add_animator(EcsRegistry reg, Entity e, AnimClip *action_anims,
+void ecs_add_animator(EcsRegistry reg, Entity entity, AnimClip *action_anims,
                       u8 initial_clip_id) {
-  if (!is_valid_entity(reg, e))
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_ANIMATOR;
-  reg->animators[e - 1] =
+  reg->masks[entity - 1] |= COMP_ANIMATOR;
+  reg->animators[entity - 1] =
       (AnimatorComponent){action_anims, 0, initial_clip_id, 0};
 }
 
-void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
+void ecs_add_collider(EcsRegistry reg, Entity entity, f32 width, f32 height,
                       f32 offset_x, f32 offset_y, bool is_trigger,
                       u32 trigger_type) {
-  if (!is_valid_entity(reg, e))
+  if (!is_valid_entity(reg, entity))
     return;
 
-  reg->masks[e - 1] |= COMP_COLLIDER;
-  reg->colliders[e - 1] = (ColliderComponent){width, height, offset_x, offset_y,
-                                              is_trigger ? trigger_type : 0};
+  reg->masks[entity - 1] |= COMP_COLLIDER;
+  reg->colliders[entity - 1] = (ColliderComponent){
+      width, height, offset_x, offset_y, is_trigger ? trigger_type : 0};
 }
 
-PositionComponent *ecs_get_position(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_POSITION))
-    return NULL;
-  return &reg->positions[e - 1];
+void ecs_add_camera(EcsRegistry reg, Entity camera_ntt, Vector2 half_bound,
+                    Vector2 target_position, Entity target_entity, f32 speed,
+                    f32 shake_trauma) {
+  if (!is_valid_entity(reg, camera_ntt))
+    return;
+
+  reg->masks[camera_ntt - 1] |= COMP_CAMERA;
+  reg->cameras[camera_ntt - 1] = (CameraComponent){
+      half_bound, target_position, target_entity, speed, shake_trauma};
 }
 
-RenderComponent *ecs_get_render(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_RENDER))
-    return NULL;
-  return &reg->render[e - 1];
+PositionComponent *ecs_get_position(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_POSITION))
+    return nullptr;
+  return &reg->positions[entity - 1];
 }
 
-SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_SPRITE))
-    return NULL;
-  return &reg->sprites[e - 1];
+RenderComponent *ecs_get_render(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_RENDER))
+    return nullptr;
+  return &reg->render[entity - 1];
 }
 
-VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_VELOCITY))
-    return NULL;
-  return &reg->velocities[e - 1];
+SpriteComponent *ecs_get_sprite(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_SPRITE))
+    return nullptr;
+  return &reg->sprites[entity - 1];
 }
 
-AnimatorComponent *ecs_get_animator(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_ANIMATOR))
-    return NULL;
-  return &reg->animators[e - 1];
+VelocityComponent *ecs_get_velocity(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_VELOCITY))
+    return nullptr;
+  return &reg->velocities[entity - 1];
 }
 
-ColliderComponent *ecs_get_collider(EcsRegistry reg, Entity e) {
-  if (!has_component(reg, e, COMP_COLLIDER))
-    return NULL;
-  return &reg->colliders[e - 1];
+AnimatorComponent *ecs_get_animator(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_ANIMATOR))
+    return nullptr;
+  return &reg->animators[entity - 1];
 }
 
-u64 ecs_get_mask(EcsRegistry reg, Entity e) {
-  if (!is_valid_entity(reg, e))
+ColliderComponent *ecs_get_collider(EcsRegistry reg, Entity entity) {
+  if (!has_component(reg, entity, COMP_COLLIDER))
+    return nullptr;
+  return &reg->colliders[entity - 1];
+}
+
+CameraComponent *ecs_get_camera(EcsRegistry reg, Entity camera) {
+  if (!has_component(reg, camera, COMP_CAMERA))
+    return nullptr;
+  return &reg->cameras[camera - 1];
+}
+
+u64 ecs_get_mask(EcsRegistry reg, Entity entity) {
+  if (!is_valid_entity(reg, entity))
     return 0;
-  return reg->masks[e - 1];
+  return reg->masks[entity - 1];
 }
 
 u32 ecs_get_number_of_entities(EcsRegistry reg) {
