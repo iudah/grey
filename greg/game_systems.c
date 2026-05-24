@@ -1,7 +1,10 @@
 #include "game_anim.h"
+#include "grey_ecs.h"
 #include "grey_events.h"
+#include "grey_systems.h"
 
-void game_system_trigger_update(GreyEvents system, u8 **trigger_cell) {
+void game_system_trigger_update(GreyEvents system, EcsRegistry reg,
+                                Entity camera_ntt, u8 **trigger_cell) {
   auto n_events = event_system_get_event_count(system);
   auto events = event_system_get_events(system);
 
@@ -9,6 +12,7 @@ void game_system_trigger_update(GreyEvents system, u8 **trigger_cell) {
     auto event = events[i];
     if (event.type == TRIGGER_EVENT) {
       if (event.as.trigger.trigger_id == WATER_TILE) {
+        grey_set_camera_trauma(reg, camera_ntt, 5);
       }
       if (event.as.trigger.trigger_id == ONE_WAY_ENTRY_TRIGGER) {
         auto actor = event.as.trigger.entity;

@@ -60,6 +60,8 @@ typedef struct {
 typedef struct {
   Vector2 half_bound;
   Vector2 target;
+  Vector2 min;
+  Vector2 max;
   Entity target_entity;
   f32 speed;
   f32 shake_trauma;
@@ -83,7 +85,7 @@ void ecs_add_collider(EcsRegistry reg, Entity e, f32 width, f32 height,
                       u32 trigger_type);
 void ecs_add_camera(EcsRegistry reg, Entity camera_ntt, Vector2 half_bound,
                     Vector2 target_position, Entity target_entity, f32 speed,
-                    f32 shake_trauma);
+                    Vector2 min, Vector2 max);
 
 u64 ecs_get_mask(EcsRegistry reg, Entity e);
 u32 ecs_get_number_of_entities(EcsRegistry reg);

@@ -170,9 +170,11 @@ int main(void) {
   ecs_add_collider(reg, player, 24, 8, 20, 52, false, 0);
 
   auto camera_entity = ecs_create_entity(reg);
-  ecs_add_camera(reg, camera_entity, (Vector2){CAM_DEADZONE_X, CAM_DEADZONE_Y},
-                 (Vector2){PLAYER_START_X, PLAYER_START_Y}, player, CAM_SPEED,
-                 0);
+  ecs_add_camera(
+      reg, camera_entity, (Vector2){CAM_DEADZONE_X, CAM_DEADZONE_Y},
+      (Vector2){PLAYER_START_X, PLAYER_START_Y}, player, CAM_SPEED,
+      (Vector2){SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2},
+      (Vector2){740 - (SCREEN_WIDTH / 2), 640 - (SCREEN_HEIGHT / 2)});
 
   Camera2D camera = {
       .target = {PLAYER_START_X, PLAYER_START_Y},
@@ -181,7 +183,7 @@ int main(void) {
       .rotation = 0.0f,
       .zoom = 1.0f};
 
-  u8 *one_way_trigger[MAX_ENTITIES] = {NULL};
+  u8 *one_way_trigger[MAX_ENTITIES] = {nullptr};
 
   Entity one_way_entry = ecs_create_entity(reg);
   ecs_add_position(reg, one_way_entry, 2 * TILE_SIZE, 4 * TILE_SIZE - 4);
@@ -217,7 +219,8 @@ int main(void) {
     grey_sys_physics_update(reg, &map, tile_set, events_system);
     grey_sys_animator_update(reg);
 
-    game_system_trigger_update(events_system, one_way_trigger);
+    game_system_trigger_update(events_system, reg, camera_entity,
+                               one_way_trigger);
 
     grey_sys_camera_update(reg, camera_entity, &camera);
 

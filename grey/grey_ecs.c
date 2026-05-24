@@ -143,13 +143,13 @@ void ecs_add_collider(EcsRegistry reg, Entity entity, f32 width, f32 height,
 
 void ecs_add_camera(EcsRegistry reg, Entity camera_ntt, Vector2 half_bound,
                     Vector2 target_position, Entity target_entity, f32 speed,
-                    f32 shake_trauma) {
+                    Vector2 min, Vector2 max) {
   if (!is_valid_entity(reg, camera_ntt))
     return;
 
   reg->masks[camera_ntt - 1] |= COMP_CAMERA;
   reg->cameras[camera_ntt - 1] = (CameraComponent){
-      half_bound, target_position, target_entity, speed, shake_trauma};
+      half_bound, target_position, min, max, target_entity, speed, 0};
 }
 
 PositionComponent *ecs_get_position(EcsRegistry reg, Entity entity) {
